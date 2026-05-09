@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vo1d.mn — Game Shop & Middleman</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#070b14;--bg2:#0d1220;--bg3:#111827;
+--neon:#00f5ff;--neon2:#7c3aed;--neon3:#f59e0b;
+--text:#e2e8f0;--muted:#64748b;
+--card:#0f172a;--border:#1e293b;
+--success:#10b981;--danger:#ef4444;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden}
+.grid-bg{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;
+background-image:linear-gradient(rgba(0,245,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,0.03) 1px,transparent 1px);
+background-size:40px 40px}
+.app{position:relative;z-index:1;min-height:100vh}
+
+/* NAV */
+nav{background:rgba(7,11,20,0.97);backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,245,255,0.15);
+padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--neon);
+text-shadow:0 0 20px rgba(0,245,255,0.5);letter-spacing:2px;cursor:pointer}
+.logo span{color:#fff}
+.nav-links{display:flex;gap:8px;align-items:center}
+.nav-btn{background:transparent;border:1px solid rgba(0,245,255,0.3);color:var(--neon);
+padding:7px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;transition:all 0.2s}
+.nav-btn:hover{background:rgba(0,245,255,0.1);border-color:var(--neon)}
+.nav-btn.admin-nav{border-color:rgba(124,58,237,0.4);color:#a78bfa;position:relative}
+.nav-btn.admin-nav:hover{background:rgba(124,58,237,0.1)}
+.nav-btn.logout-btn{border-color:rgba(239,68,68,0.4);color:#f87171;display:none}
+.nav-btn.logout-btn:hover{background:rgba(239,68,68,0.1)}
+.notif-dot{position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;
+background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:none;
+align-items:center;justify-content:center;border:2px solid var(--bg);animation:ping 1.5s infinite}
+@keyframes ping{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.2);opacity:0.8}}
+
+/* LOGIN MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(10px);
+z-index:9999;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.login-box{background:var(--card);border:1px solid rgba(124,58,237,0.4);border-radius:20px;
+padding:40px 36px;width:100%;max-width:380px;position:relative;
+box-shadow:0 0 60px rgba(124,58,237,0.15),0 24px 60px rgba(0,0,0,0.6);animation:modalIn 0.3s cubic-bezier(.18,.89,.32,1.28)}
+@keyframes modalIn{from{opacity:0;transform:scale(0.9) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.login-icon{font-size:48px;text-align:center;margin-bottom:16px}
+.login-title{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;text-align:center;color:#a78bfa;margin-bottom:6px}
+.login-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:28px}
+.login-input{width:100%;background:#070b14;border:1px solid var(--border);color:var(--text);
+padding:14px 16px;border-radius:10px;font-size:15px;font-family:'Inter',sans-serif;
+outline:none;transition:border-color 0.2s;margin-bottom:14px}
+.login-input:focus{border-color:rgba(124,58,237,0.6);box-shadow:0 0 0 3px rgba(124,58,237,0.1)}
+.login-input::placeholder{color:var(--muted)}
+.login-btn{width:100%;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;color:#fff;
+padding:14px;border-radius:10px;font-size:16px;font-weight:700;font-family:'Rajdhani',sans-serif;
+letter-spacing:1px;cursor:pointer;transition:all 0.25s;margin-top:4px}
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(124,58,237,0.4)}
+.login-error{color:var(--danger);font-size:13px;text-align:center;margin-top:10px;min-height:20px}
+.login-close{position:absolute;top:14px;right:16px;background:transparent;border:none;
+color:var(--muted);font-size:20px;cursor:pointer;transition:color 0.2s;line-height:1}
+.login-close:hover{color:var(--text)}
+.login-attempts{font-size:11px;color:var(--muted);text-align:center;margin-top:8px}
+
+/* CONFIRM ID MODAL */
+.confirm-modal{background:var(--card);border:1px solid rgba(245,158,11,0.4);border-radius:20px;
+padding:36px 30px;width:100%;max-width:400px;position:relative;
+box-shadow:0 0 60px rgba(245,158,11,0.1),0 24px 60px rgba(0,0,0,0.7);animation:modalIn 0.3s cubic-bezier(.18,.89,.32,1.28)}
+.confirm-icon{font-size:52px;text-align:center;margin-bottom:14px}
+.confirm-title{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;text-align:center;color:var(--neon3);margin-bottom:6px}
+.confirm-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:24px}
+.confirm-id-box{background:#070b14;border:2px solid rgba(0,245,255,0.3);border-radius:12px;
+padding:18px;margin-bottom:20px;text-align:center}
+.confirm-id-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.confirm-id-value{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:var(--neon);
+word-break:break-all;text-shadow:0 0 16px rgba(0,245,255,0.3)}
+.confirm-id-game{font-size:12px;color:var(--muted);margin-top:6px}
+.confirm-warning{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);
+border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:var(--neon3);line-height:1.5}
+.confirm-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.confirm-yes{background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;
+padding:13px;border-radius:10px;font-size:15px;font-weight:700;font-family:'Rajdhani',sans-serif;
+cursor:pointer;transition:all 0.2s}
+.confirm-yes:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(16,185,129,0.35)}
+.confirm-no{background:transparent;border:1px solid var(--border);color:var(--muted);
+padding:13px;border-radius:10px;font-size:15px;font-weight:600;font-family:'Rajdhani',sans-serif;
+cursor:pointer;transition:all 0.2s}
+.confirm-no:hover{border-color:var(--danger);color:var(--danger)}
+
+/* PAYMENT MODAL */
+.payment-modal{background:var(--card);border:1px solid rgba(0,245,255,0.3);border-radius:20px;
+padding:36px 30px;width:100%;max-width:460px;position:relative;
+box-shadow:0 0 60px rgba(0,245,255,0.08),0 24px 60px rgba(0,0,0,0.7);animation:modalIn 0.3s cubic-bezier(.18,.89,.32,1.28)}
+.payment-modal-title{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--neon);
+margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.bank-info-card{background:#070b14;border:1px solid rgba(0,245,255,0.2);border-radius:14px;padding:20px;margin-bottom:16px}
+.bank-info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;
+border-bottom:1px solid rgba(30,41,59,0.7)}
+.bank-info-row:last-child{border-bottom:none}
+.bank-info-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px}
+.bank-info-value{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+.bank-info-value.highlight{color:var(--neon);font-family:'Courier New',monospace;font-size:16px}
+.bank-info-value.order-highlight{color:var(--neon3);font-family:'Courier New',monospace;font-size:15px}
+.copy-btn{background:rgba(0,245,255,0.1);border:1px solid rgba(0,245,255,0.25);color:var(--neon);
+padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'Inter',sans-serif;transition:all 0.2s;white-space:nowrap}
+.copy-btn:hover{background:rgba(0,245,255,0.2)}
+.copy-btn.copied{background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:var(--success)}
+.payment-amount-box{background:linear-gradient(135deg,rgba(0,245,255,0.08),rgba(124,58,237,0.08));
+border:1px solid rgba(0,245,255,0.25);border-radius:12px;padding:18px;margin-bottom:16px;
+display:flex;justify-content:space-between;align-items:center}
+.payment-amount-label{font-size:13px;color:var(--muted)}
+.payment-amount-value{font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;
+color:var(--neon);text-shadow:0 0 16px rgba(0,245,255,0.3)}
+.payment-steps{background:rgba(15,23,42,0.8);border-radius:12px;padding:16px;margin-bottom:20px}
+.pay-step-row{display:flex;align-items:flex-start;gap:12px;padding:8px 0;font-size:13px;color:var(--muted)}
+.pay-step-num{width:24px;height:24px;border-radius:50%;background:rgba(0,245,255,0.1);
+border:1px solid rgba(0,245,255,0.3);color:var(--neon);display:flex;align-items:center;
+justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+.pending-btn{width:100%;background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.1));
+border:1px solid rgba(245,158,11,0.4);color:var(--neon3);padding:14px;border-radius:12px;
+font-size:16px;font-weight:700;font-family:'Rajdhani',sans-serif;cursor:pointer;transition:all 0.2s}
+.pending-btn:hover{background:linear-gradient(135deg,rgba(245,158,11,0.3),rgba(245,158,11,0.15));
+box-shadow:0 6px 24px rgba(245,158,11,0.2)}
+.close-modal-btn{position:absolute;top:14px;right:16px;background:transparent;border:none;
+color:var(--muted);font-size:20px;cursor:pointer;transition:color 0.2s;line-height:1}
+.close-modal-btn:hover{color:var(--text)}
+
+/* PENDING PAGE */
+.pending-page{text-align:center;padding:60px 24px;max-width:520px;margin:0 auto}
+.pending-icon{font-size:72px;margin-bottom:20px;animation:pendingPulse 2s ease-in-out infinite}
+@keyframes pendingPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.pending-card{background:var(--card);border:1px solid rgba(245,158,11,0.3);border-radius:16px;
+padding:24px;margin:24px 0;text-align:left}
+.pending-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;
+border-bottom:1px solid var(--border);font-size:14px}
+.pending-row:last-child{border-bottom:none}
+.pending-row .label{color:var(--muted)}
+.pending-row .value{font-weight:600;color:var(--text)}
+.pending-status{display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,0.12);
+border:1px solid rgba(245,158,11,0.3);color:var(--neon3);padding:6px 14px;border-radius:20px;
+font-size:13px;font-weight:600;margin-bottom:16px}
+.pending-dot{width:8px;height:8px;border-radius:50%;background:var(--neon3);animation:pulse 1.2s infinite}
+.pending-msg{color:var(--muted);font-size:14px;line-height:1.7;background:rgba(15,23,42,0.8);
+border-radius:12px;padding:16px;margin-bottom:20px;text-align:left}
+.pending-msg strong{color:var(--neon3)}
+
+/* TAB SWITCHER */
+.tab-switcher{display:flex;gap:0;background:rgba(15,23,42,0.9);border:1px solid var(--border);
+border-radius:10px;padding:4px;margin:0 auto 32px;width:fit-content}
+.tab-btn{padding:9px 28px;border-radius:7px;border:none;background:transparent;color:var(--muted);
+font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.22s}
+.tab-btn.active{background:linear-gradient(135deg,rgba(0,245,255,0.18),rgba(124,58,237,0.18));
+color:var(--neon);border:1px solid rgba(0,245,255,0.35);box-shadow:0 0 14px rgba(0,245,255,0.1)}
+
+/* HERO */
+.hero{text-align:center;padding:60px 24px 32px;position:relative}
+.hero-badge{display:inline-block;background:rgba(0,245,255,0.1);border:1px solid rgba(0,245,255,0.3);
+color:var(--neon);padding:6px 18px;border-radius:20px;font-size:12px;letter-spacing:2px;
+text-transform:uppercase;margin-bottom:20px;animation:fadeIn 0.6s ease}
+.hero h1{font-family:'Rajdhani',sans-serif;font-size:clamp(32px,6vw,64px);font-weight:700;
+line-height:1.1;margin-bottom:16px;animation:fadeIn 0.8s ease}
+.hero h1 .glow{color:var(--neon);text-shadow:0 0 30px rgba(0,245,255,0.5)}
+.hero p{color:var(--muted);font-size:16px;max-width:500px;margin:0 auto 32px;animation:fadeIn 1s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* SECTION */
+.section{padding:0 24px 60px;max-width:1100px;margin:0 auto}
+.section-title{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:600;color:var(--text);
+margin-bottom:24px;display:flex;align-items:center;gap:10px}
+.section-title::before{content:'';width:4px;height:20px;background:var(--neon);border-radius:2px;
+box-shadow:0 0 8px var(--neon);display:block}
+
+/* GAME CARDS */
+.games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+.game-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;
+cursor:pointer;transition:all 0.3s;position:relative}
+.game-card:hover{transform:translateY(-6px);border-color:rgba(0,245,255,0.5);box-shadow:0 12px 40px rgba(0,245,255,0.12)}
+.game-card-img{height:150px;display:flex;align-items:center;justify-content:center;font-size:60px;position:relative;overflow:hidden}
+.game-card-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,var(--card) 100%)}
+.pubg-bg{background:linear-gradient(135deg,#1a0a00,#3d1a00)}
+.ml-bg{background:linear-gradient(135deg,#0a0020,#1a0050)}
+.roblox-bg{background:linear-gradient(135deg,#001a00,#003300)}
+.s2-bg{background:linear-gradient(135deg,#1a0000,#400000)}
+.game-card-info{padding:14px}
+.game-card-info h3{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:600;margin-bottom:4px}
+.game-card-info p{color:var(--muted);font-size:12px}
+.game-card-tag{position:absolute;top:10px;right:10px;background:rgba(0,245,255,0.15);
+border:1px solid rgba(0,245,255,0.3);color:var(--neon);padding:3px 10px;border-radius:12px;font-size:11px;z-index:1}
+.buy-btn-small{margin-top:10px;width:100%;background:linear-gradient(135deg,rgba(0,245,255,0.1),rgba(124,58,237,0.1));
+border:1px solid rgba(0,245,255,0.3);color:var(--neon);padding:9px;border-radius:8px;cursor:pointer;
+font-size:13px;font-family:'Inter',sans-serif;font-weight:500;transition:all 0.2s}
+.buy-btn-small:hover{background:linear-gradient(135deg,rgba(0,245,255,0.2),rgba(124,58,237,0.2));
+box-shadow:0 0 16px rgba(0,245,255,0.2);transform:translateY(-1px)}
+
+/* FEATURES */
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:48px}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+.feature-icon{font-size:28px;margin-bottom:10px}
+.feature-card h4{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;margin-bottom:6px;color:var(--neon)}
+.feature-card p{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* MIDDLEMAN */
+.mid-section{padding:0 24px 60px;max-width:900px;margin:0 auto}
+.tariff-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-bottom:40px}
+.tariff-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;
+text-align:center;position:relative;transition:all 0.3s}
+.tariff-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.4)}
+.tariff-card.featured{border-color:rgba(0,245,255,0.5);box-shadow:0 0 32px rgba(0,245,255,0.08)}
+.tariff-card.featured::before{content:'ТҮГЭЭМЭЛ';position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+background:var(--neon);color:#000;font-size:10px;font-weight:700;letter-spacing:2px;padding:4px 14px;border-radius:20px}
+.tariff-badge{font-size:36px;margin-bottom:14px}
+.tariff-name{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px}
+.tariff-price{font-family:'Rajdhani',sans-serif;font-size:40px;font-weight:700;color:var(--neon);margin-bottom:4px}
+.tariff-price.amber{color:var(--neon3)}
+.tariff-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.tariff-desc{font-size:13px;color:var(--muted);line-height:1.6}
+.mid-steps{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:32px}
+.mid-steps h3{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:600;color:var(--neon);
+margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.step-row{display:flex;align-items:flex-start;gap:16px;margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.step-row:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.step-num{width:36px;height:36px;border-radius:50%;background:rgba(0,245,255,0.1);
+border:1px solid rgba(0,245,255,0.35);color:var(--neon);display:flex;align-items:center;
+justify-content:center;font-weight:700;font-size:15px;flex-shrink:0}
+.step-text h4{font-size:14px;font-weight:600;margin-bottom:4px;color:var(--text)}
+.step-text p{font-size:12px;color:var(--muted);line-height:1.5}
+.admins-section{margin-bottom:40px}
+.admins-title{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:600;color:var(--neon3);
+margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.admins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.admin-contact-card{background:var(--card);border:1px solid var(--border);border-radius:12px;
+padding:18px;display:flex;align-items:center;gap:14px;transition:all 0.25s;text-decoration:none;color:inherit}
+.admin-contact-card:hover{border-color:rgba(24,119,242,0.6);transform:translateY(-3px);box-shadow:0 8px 28px rgba(24,119,242,0.15)}
+.fb-logo{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#1877f2,#0d5ab4);
+display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fb-logo svg{width:22px;height:22px;fill:#fff}
+.admin-contact-info .a-role{font-size:11px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:1px}
+.admin-contact-info .a-name{font-size:14px;font-weight:600;color:var(--text)}
+.admin-contact-info .a-link{font-size:11px;color:#1877f2;margin-top:2px}
+
+/* DETAIL */
+.detail-page{padding:24px;max-width:800px;margin:0 auto}
+.back-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;
+font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;margin-bottom:24px;padding:0;transition:color 0.2s}
+.back-btn:hover{color:var(--neon)}
+.detail-header{display:flex;align-items:center;gap:20px;margin-bottom:32px;background:var(--card);
+border:1px solid var(--border);border-radius:16px;padding:24px}
+.detail-icon{font-size:64px;width:100px;height:100px;display:flex;align-items:center;
+justify-content:center;border-radius:16px;flex-shrink:0}
+.detail-header h2{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;margin-bottom:6px}
+.detail-header p{color:var(--muted);font-size:14px}
+.currency-badge{display:inline-block;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);
+color:var(--neon3);padding:4px 12px;border-radius:8px;font-size:12px;font-weight:600;margin-top:8px}
+.form-section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px}
+.form-label{font-size:12px;color:var(--muted);margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:1px}
+.form-input{width:100%;background:#070b14;border:1px solid var(--border);color:var(--text);
+padding:13px 16px;border-radius:10px;font-size:15px;font-family:'Inter',sans-serif;transition:border-color 0.2s;outline:none}
+.form-input:focus{border-color:rgba(0,245,255,0.5);box-shadow:0 0 0 3px rgba(0,245,255,0.08)}
+.form-input::placeholder{color:var(--muted)}
+
+/* Player ID validation */
+.id-status{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;min-height:22px}
+.id-status.valid{color:var(--success)}
+.id-status.invalid{color:var(--danger)}
+.id-status.hint{color:var(--muted)}
+
+.packages-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:8px}
+.package-card{background:#070b14;border:2px solid var(--border);border-radius:12px;padding:18px;
+cursor:pointer;transition:all 0.25s;text-align:center;position:relative}
+.package-card:hover{border-color:rgba(0,245,255,0.4);transform:translateY(-2px)}
+.package-card.selected{border-color:var(--neon);background:rgba(0,245,255,0.05);box-shadow:0 0 20px rgba(0,245,255,0.12)}
+.package-card.selected::before{content:'✓';position:absolute;top:8px;right:12px;color:var(--neon);font-size:14px;font-weight:700}
+.package-amount{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:var(--neon)}
+.package-unit{font-size:12px;color:var(--muted);margin-bottom:6px}
+.package-price{font-size:18px;font-weight:700;color:#fff}
+.price-summary{background:linear-gradient(135deg,rgba(0,245,255,0.08),rgba(124,58,237,0.08));
+border:1px solid rgba(0,245,255,0.25);border-radius:12px;padding:20px;margin-bottom:20px;
+display:flex;justify-content:space-between;align-items:center}
+.price-total-label{font-size:14px;color:var(--muted)}
+.price-total-amount{font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;
+color:var(--neon);text-shadow:0 0 16px rgba(0,245,255,0.4)}
+.buy-btn{width:100%;background:linear-gradient(135deg,#00f5ff,#7c3aed);border:none;color:#000;
+padding:17px;border-radius:12px;font-size:17px;font-weight:700;font-family:'Rajdhani',sans-serif;
+letter-spacing:1px;cursor:pointer;transition:all 0.3s}
+.buy-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 40px rgba(0,245,255,0.35)}
+.buy-btn:disabled{opacity:0.45;cursor:not-allowed;transform:none}
+
+/* PENDING PAGE */
+.pending-page{text-align:center;padding:60px 24px;max-width:520px;margin:0 auto}
+
+/* ADMIN PANEL */
+.admin-page{padding:24px;max-width:1100px;margin:0 auto}
+.admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px}
+.admin-title{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:#a78bfa}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-bottom:32px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:border-color 0.2s}
+.stat-card:hover{border-color:rgba(124,58,237,0.3)}
+.stat-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.stat-value{font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700}
+.stat-value.cyan{color:var(--neon)}.stat-value.purple{color:#a78bfa}.stat-value.amber{color:var(--neon3)}.stat-value.green{color:var(--success)}
+.admin-section{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+.admin-section h3{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:600;margin-bottom:20px;color:#a78bfa;display:flex;align-items:center;gap:8px}
+
+/* NEW ORDER ALERT */
+.new-order-banner{background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(245,158,11,0.1));
+border:1px solid rgba(239,68,68,0.4);border-radius:12px;padding:16px 20px;margin-bottom:20px;
+display:none;align-items:center;justify-content:space-between;gap:12px;animation:fadeIn 0.4s ease}
+.new-order-banner.show{display:flex}
+.new-order-banner-left{display:flex;align-items:center;gap:12px}
+.new-order-banner-dot{width:12px;height:12px;border-radius:50%;background:var(--danger);
+animation:ping 1s infinite;flex-shrink:0}
+.new-order-banner-text h4{font-size:15px;font-weight:700;color:#f87171;margin-bottom:2px}
+.new-order-banner-text p{font-size:12px;color:var(--muted)}
+.dismiss-banner{background:transparent;border:1px solid rgba(239,68,68,0.3);color:#f87171;
+padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;transition:all 0.2s}
+.dismiss-banner:hover{background:rgba(239,68,68,0.1)}
+
+/* ORDERS TABLE */
+.price-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.price-row:last-child{border-bottom:none}
+.price-row label{font-size:14px;color:var(--text);flex:1}
+.price-row .price-input{background:#070b14;border:1px solid var(--border);color:var(--text);
+padding:7px 12px;border-radius:6px;width:110px;font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s}
+.price-row .price-input:focus{border-color:rgba(124,58,237,0.5)}
+.save-btn{background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);color:#a78bfa;
+padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;font-family:'Inter',sans-serif;font-weight:500;transition:all 0.2s;margin-top:16px}
+.save-btn:hover{background:rgba(124,58,237,0.35);transform:translateY(-1px)}
+.orders-table{width:100%;font-size:13px;border-collapse:collapse}
+.orders-table th{text-align:left;padding:10px 12px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border)}
+.orders-table td{padding:12px;border-bottom:1px solid rgba(30,41,59,0.5)}
+.orders-table tr:last-child td{border-bottom:none}
+.orders-table tr:hover td{background:rgba(255,255,255,0.02)}
+.orders-table tr.new-row td{background:rgba(239,68,68,0.05)}
+.status-badge{padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600}
+.status-done{background:rgba(16,185,129,0.15);color:var(--success)}
+.status-pending{background:rgba(245,158,11,0.15);color:var(--neon3)}
+.status-confirmed{background:rgba(0,245,255,0.12);color:var(--neon)}
+
+/* ADMIN ACTION BUTTONS */
+.confirm-order-btn{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);
+color:var(--success);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;
+font-family:'Inter',sans-serif;transition:all 0.2s;white-space:nowrap}
+.confirm-order-btn:hover{background:rgba(16,185,129,0.25)}
+.confirm-order-btn:disabled{opacity:0.4;cursor:not-allowed}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:#0f172a;border:1px solid rgba(0,245,255,0.4);
+color:var(--neon);padding:14px 22px;border-radius:10px;font-size:14px;z-index:99999;
+transform:translateX(140%);transition:transform 0.35s cubic-bezier(.18,.89,.32,1.28);
+box-shadow:0 4px 32px rgba(0,0,0,0.6);max-width:320px}
+.toast.show{transform:translateX(0)}
+.toast.error{border-color:rgba(239,68,68,0.5);color:#f87171}
+.toast.success-toast{border-color:rgba(16,185,129,0.5);color:var(--success)}
+.toast.warning-toast{border-color:rgba(245,158,11,0.5);color:var(--neon3)}
+
+footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center;color:var(--muted);font-size:13px;margin-top:40px}
+footer span{color:var(--neon)}
+
+@media(max-width:600px){
+.games-grid{grid-template-columns:repeat(2,1fr)}
+.packages-grid{grid-template-columns:repeat(2,1fr)}
+.detail-header{flex-direction:column;text-align:center}
+.detail-icon{width:80px;height:80px;font-size:44px}
+nav{padding:0 16px}.logo{font-size:18px}
+.features{grid-template-columns:repeat(2,1fr)}
+.tariff-grid{grid-template-columns:1fr}
+.admins-grid{grid-template-columns:1fr}
+.login-box{margin:16px;padding:28px 20px}
+.payment-modal,.confirm-modal{margin:12px;padding:24px 18px}
+.bank-info-value{flex-direction:column;align-items:flex-end;gap:4px}
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- ═══════════════════════════════════════════
+     LOGIN MODAL
+═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="login-modal">
+  <div class="login-box">
+    <button class="login-close" onclick="closeLogin()">✕</button>
+    <div class="login-icon">🔐</div>
+    <div class="login-title">Admin Нэвтрэх</div>
+    <div class="login-sub">Vo1d.mn — Зөвшөөрөлтэй хэрэглэгч нэвтрэнэ үү</div>
+    <input class="login-input" type="password" id="login-pw" placeholder="Нууц үг оруулах..."
+      onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password"/>
+    <button class="login-btn" onclick="doLogin()">🔓 Нэвтрэх</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-attempts" id="login-attempts"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CONFIRM PLAYER ID MODAL
+═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="confirm-modal">
+    <div class="confirm-icon">🎮</div>
+    <div class="confirm-title">Player ID баталгаажуулах</div>
+    <div class="confirm-sub">Та дараах Player ID руу цэнэглэхийг баталгаажуулна уу</div>
+    <div class="confirm-id-box">
+      <div class="confirm-id-label">Таны оруулсан Player ID</div>
+      <div class="confirm-id-value" id="confirm-show-id">—</div>
+      <div class="confirm-id-game" id="confirm-show-game">—</div>
+    </div>
+    <div class="confirm-warning">
+      ⚠️ <strong>Анхаар:</strong> Буруу ID оруулбал цэнэглэлт өөр хүний аккаунтад орно. Буцаан олгох боломжгүй тул ID-гаа давхар шалгаарай!
+    </div>
+    <div class="confirm-btns">
+      <button class="confirm-no" onclick="closeConfirmModal()">← Буцах</button>
+      <button class="confirm-yes" onclick="proceedToPayment()">✅ Тийм, зөв байна</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAYMENT MODAL (Bank Transfer)
+═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="payment-modal">
+  <div class="payment-modal">
+    <button class="close-modal-btn" onclick="closePaymentModal()">✕</button>
+    <div class="payment-modal-title">🏦 Банкны шилжүүлэг</div>
+
+    <div class="payment-amount-box">
+      <div>
+        <div class="payment-amount-label">Төлөх дүн</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px" id="pay-modal-detail">—</div>
+      </div>
+      <div class="payment-amount-value" id="pay-modal-amount">₮0</div>
+    </div>
+
+    <div class="bank-info-card">
+      <div class="bank-info-row">
+        <div class="bank-info-label">Банк</div>
+        <div class="bank-info-value">🏦 Голомт банк</div>
+      </div>
+      <div class="bank-info-row">
+        <div class="bank-info-label">IBAN</div>
+        <div class="bank-info-value highlight">
+          MN39001500
+          <button class="copy-btn" onclick="copyText('MN39001500', this)">Хуулах</button>
+        </div>
+      </div>
+      <div class="bank-info-row">
+        <div class="bank-info-label">Дансны дугаар</div>
+        <div class="bank-info-value highlight">
+          6115105008
+          <button class="copy-btn" onclick="copyText('6115105008', this)">Хуулах</button>
+        </div>
+      </div>
+      <div class="bank-info-row">
+        <div class="bank-info-label">Гүйлгээний утга</div>
+        <div class="bank-info-value order-highlight">
+          <span id="pay-modal-ref">—</span>
+          <button class="copy-btn" onclick="copyText(document.getElementById('pay-modal-ref').textContent, this)">Хуулах</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="payment-steps">
+      <div class="pay-step-row"><div class="pay-step-num">1</div><span>Дээрх дансны дугаар руу яг <strong style="color:var(--neon3)" id="step-amount-inline">₮0</strong> шилжүүлнэ үү</span></div>
+      <div class="pay-step-row"><div class="pay-step-num">2</div><span>Гүйлгээний утга хэсэгт <strong style="color:var(--neon3)" id="step-ref-inline">ORD-…</strong> гэж бичнэ үү</span></div>
+      <div class="pay-step-row"><div class="pay-step-num">3</div><span>Шилжүүлгийн дараа доорх товч дарна уу — Admin баталгаажуулна</span></div>
+    </div>
+
+    <button class="pending-btn" onclick="submitOrder()">
+      💸 Шилжүүлсэн — Баталгаажуулалт хүлээж байна
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     APP
+═══════════════════════════════════════════ -->
+<div class="app" id="app">
+<nav>
+  <div class="logo" onclick="showPage('home')">VO1D<span>.MN</span></div>
+  <div class="nav-links">
+    <button class="nav-btn" onclick="showPage('home')">🏠 Нүүр</button>
+    <button class="nav-btn admin-nav" id="admin-nav-btn" onclick="openAdminLogin()">
+      ⚙️ Admin
+      <div class="notif-dot" id="notif-dot">0</div>
+    </button>
+    <button class="nav-btn logout-btn" id="logout-btn" onclick="doLogout()">🚪 Гарах</button>
+  </div>
+</nav>
+
+<!-- ══ HOME ══ -->
+<div id="page-home">
+  <div class="hero">
+    <div class="hero-badge">🎮 Монголын Game Shop & Middleman</div>
+    <h1>Тоглоомоо <span class="glow">Хурдан</span><br>Цэнэглэ</h1>
+    <p>Game item худалдаа, Middleman үйлчилгээ — хурдан, найдвартай, аюулгүй</p>
+    <div class="tab-switcher">
+      <button class="tab-btn active" onclick="switchTab('prices')">🎮 Game Prices</button>
+      <button class="tab-btn" onclick="switchTab('middleman')">🤝 Middleman</button>
+    </div>
+  </div>
+
+  <div id="tab-prices" class="section">
+    <div class="features">
+      <div class="feature-card"><div class="feature-icon">⚡</div><h4>Тэр даруй</h4><p>Захиалгын дараа Admin баталгаажуулмагц цэнэглэгдэнэ</p></div>
+      <div class="feature-card"><div class="feature-icon">🔒</div><h4>Аюулгүй</h4><p>Голомт банкны шилжүүлэг — найдвартай, баталгаатай</p></div>
+      <div class="feature-card"><div class="feature-icon">💳</div><h4>Голомт банк</h4><p>Дансны дугаар + гүйлгээний утга оруулаад л болно</p></div>
+      <div class="feature-card"><div class="feature-icon">🎯</div><h4>24/7</h4><p>Хоногийн аль ч цагт захиалга өгч болно</p></div>
+    </div>
+    <div class="section-title">🎮 Тоглоомууд</div>
+    <div class="games-grid" id="games-grid"></div>
+  </div>
+
+  <div id="tab-middleman" style="display:none">
+    <div style="text-align:center;padding:56px 24px 24px">
+      <div style="display:inline-block;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);
+        color:var(--neon3);padding:6px 18px;border-radius:20px;font-size:12px;letter-spacing:2px;
+        text-transform:uppercase;margin-bottom:20px">🤝 Middleman Service</div>
+      <h1 style="font-family:'Rajdhani',sans-serif;font-size:clamp(28px,5vw,52px);font-weight:700;margin-bottom:12px">
+        Найдвартай <span style="color:var(--neon3);text-shadow:0 0 24px rgba(245,158,11,0.4)">Middleman</span></h1>
+      <p style="color:var(--muted);font-size:15px;max-width:480px;margin:0 auto 32px">
+        Vo1d.mn-ийн Middleman үйлчилгээ ашиглан аюулгүй арилжаа хийгээрэй.</p>
+    </div>
+    <div class="mid-section">
+      <div class="section-title" style="margin-bottom:20px">💰 Middleman Тариф</div>
+      <div class="tariff-grid" style="margin-bottom:40px">
+        <div class="tariff-card"><div class="tariff-badge">💸</div><div class="tariff-name">Зарах Мид</div><div class="tariff-price">5,000₮</div><div class="tariff-sub">нэг гүйлгээнд</div><div style="width:40px;height:2px;background:var(--border);margin:14px auto"></div><div class="tariff-desc">Та зүйлээ зарж буй тохиолдолд middleman-ий комисс.</div></div>
+        <div class="tariff-card featured"><div class="tariff-badge">🤝</div><div class="tariff-name">Тулах Мид</div><div class="tariff-price amber">7,000₮</div><div class="tariff-sub">нэг гүйлгээнд</div><div style="width:40px;height:2px;background:var(--border);margin:14px auto"></div><div class="tariff-desc">Хоёр тал тулж байгаа гүйлгээнд middleman болно.</div></div>
+        <div class="tariff-card"><div class="tariff-badge">⚔️</div><div class="tariff-name">Зөрүүтэй Тулах Мид</div><div class="tariff-price">8,000₮</div><div class="tariff-sub">нэг гүйлгээнд</div><div style="width:40px;height:2px;background:var(--border);margin:14px auto"></div><div class="tariff-desc">Зөрүүтэй нөхцөл байдалтай арилжааны дунд middleman болно.</div></div>
+      </div>
+      <div class="mid-steps">
+        <h3>📋 Яаж ажилладаг вэ?</h3>
+        <div class="step-row"><div class="step-num">1</div><div class="step-text"><h4>Холбоо барих</h4><p>Доорх Adminуудын аль нэгтэй Facebook-ээр холбоо барина уу.</p></div></div>
+        <div class="step-row"><div class="step-num">2</div><div class="step-text"><h4>Тариф тохиролцох</h4><p>Гүйлгээний төрлөөс хамааран тарифаас нэгийг сонгоно.</p></div></div>
+        <div class="step-row"><div class="step-num">3</div><div class="step-text"><h4>Middleman гүйлгээ</h4><p>Admin хоёр талын хооронд орж аюулгүй гүйлгээг хянана.</p></div></div>
+        <div class="step-row"><div class="step-num">4</div><div class="step-text"><h4>Дуусгах</h4><p>Гүйлгээ амжилттай дуусмагц комисс төлөгдөж дуусна.</p></div></div>
+      </div>
+      <div class="admins-section">
+        <div class="admins-title">👑 Admin нартай холбоо барих</div>
+        <div class="admins-grid">
+          <a class="admin-contact-card" href="https://www.facebook.com/share/1CGLjUkvu6/" target="_blank" rel="noopener"><div class="fb-logo"><svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></div><div class="admin-contact-info"><div class="a-role">Admin 1</div><div class="a-name">Холбоо барих</div><div class="a-link">Facebook →</div></div></a>
+          <a class="admin-contact-card" href="https://www.facebook.com/share/1ZtQ4jdoZ8/" target="_blank" rel="noopener"><div class="fb-logo"><svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></div><div class="admin-contact-info"><div class="a-role">Admin 2</div><div class="a-name">Холбоо барих</div><div class="a-link">Facebook →</div></div></a>
+          <a class="admin-contact-card" href="https://www.facebook.com/share/1EVRmvhsMx/" target="_blank" rel="noopener"><div class="fb-logo"><svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></div><div class="admin-contact-info"><div class="a-role">Admin 3</div><div class="a-name">Холбоо барих</div><div class="a-link">Facebook →</div></div></a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer><span>Vo1d.mn</span> © 2025 — Game Shop & Middleman Service — Бүх эрх хуулиар хамгаалагдсан</footer>
+</div>
+
+<!-- ══ DETAIL PAGE ══ -->
+<div id="page-detail" style="display:none">
+  <div class="detail-page">
+    <button class="back-btn" onclick="showPage('home')">← Буцах</button>
+    <div class="detail-header">
+      <div class="detail-icon" id="detail-icon"></div>
+      <div>
+        <h2 id="detail-title"></h2>
+        <p id="detail-desc"></p>
+        <div class="currency-badge" id="detail-currency"></div>
+      </div>
+    </div>
+
+    <!-- STEP 1: Player ID -->
+    <div class="form-section">
+      <label class="form-label">👤 1-р алхам: Player ID оруулах</label>
+      <input class="form-input" id="player-id" type="text" placeholder="Тоглогчийн ID оруулна уу..." oninput="onPlayerIdInput()"/>
+      <div class="id-status hint" id="id-status">⬆ Таны тоглоомын Player ID оруулна уу</div>
+    </div>
+
+    <!-- STEP 2: Package -->
+    <div class="form-section">
+      <label class="form-label">📦 2-р алхам: Цэнэглэх хэмжээ сонгох</label>
+      <div class="packages-grid" id="packages-grid"></div>
+    </div>
+
+    <div class="price-summary" id="price-summary" style="display:none">
+      <div>
+        <div class="price-total-label">Нийт төлөх дүн</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px" id="summary-detail"></div>
+      </div>
+      <div class="price-total-amount" id="price-total">₮0</div>
+    </div>
+
+    <button class="buy-btn" id="checkout-btn" onclick="openConfirmModal()" disabled>
+      🏦 Дансаар төлж захиалах
+    </button>
+  </div>
+</div>
+
+<!-- ══ PENDING PAGE ══ -->
+<div id="page-pending" style="display:none">
+  <div class="pending-page">
+    <div class="pending-icon">⏳</div>
+    <div class="pending-status">
+      <div class="pending-dot"></div>
+      Баталгаажуулалт хүлээж байна
+    </div>
+    <h2 style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;margin-bottom:8px">
+      Шилжүүлгийг шалгаж байна
+    </h2>
+    <div class="pending-card" id="pending-details"></div>
+    <div class="pending-msg">
+      <strong>📋 Дараагийн алхам:</strong><br>
+      Admin таны гүйлгээний утга болон шилжүүлгийг шалгаад баталгаажуулна. Амжилттай баталгаажсаны дараа таны item <strong>1 цагийн дотор</strong> орно.<br><br>
+      ❓ Асуулт байвал Admin нартай холбоо бариарай.
+    </div>
+    <button class="buy-btn" onclick="showPage('home')" style="background:rgba(0,245,255,0.1);color:var(--neon);border:1px solid rgba(0,245,255,0.3)">
+      🏠 Нүүр хуудас руу буцах
+    </button>
+  </div>
+</div>
+
+<!-- ══ ADMIN PANEL ══ -->
+<div id="page-admin" style="display:none">
+  <div class="admin-page">
+    <div class="admin-header">
+      <div class="admin-title">⚙️ Admin Panel — Vo1d.mn</div>
+      <div style="display:flex;gap:8px">
+        <button class="nav-btn" onclick="showPage('home')">← Буцах</button>
+        <button class="nav-btn logout-btn" style="display:block" onclick="doLogout()">🚪 Гарах</button>
+      </div>
+    </div>
+
+    <!-- NEW ORDER ALERT BANNER -->
+    <div class="new-order-banner" id="new-order-banner">
+      <div class="new-order-banner-left">
+        <div class="new-order-banner-dot"></div>
+        <div class="new-order-banner-text">
+          <h4>🔔 Шинэ захиалга ирлээ!</h4>
+          <p id="banner-detail">Хэрэглэгч шилжүүлэг хийснээ мэдэгдлээ. Шалгаарай.</p>
+        </div>
+      </div>
+      <button class="dismiss-banner" onclick="dismissBanner()">Харлаа ✓</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Нийт захиалга</div><div class="stat-value cyan" id="admin-total-orders">0</div></div>
+      <div class="stat-card"><div class="stat-label">Хүлээгдэж буй</div><div class="stat-value amber" id="admin-pending-count">0</div></div>
+      <div class="stat-card"><div class="stat-label">Баталгаажсан</div><div class="stat-value green" id="admin-confirmed-count">0</div></div>
+      <div class="stat-card"><div class="stat-label">Нийт орлого</div><div class="stat-value purple" id="admin-revenue">₮0</div></div>
+    </div>
+
+    <div class="admin-section">
+      <h3>💰 Үнийн удирдлага</h3>
+      <div id="price-management"></div>
+      <button class="save-btn" onclick="savePrices()">💾 Үнийг хадгалах</button>
+    </div>
+
+    <div class="admin-section">
+      <h3>📦 Захиалгуудын жагсаалт</h3>
+      <div style="overflow-x:auto">
+        <table class="orders-table">
+          <thead><tr>
+            <th>Захиалга ID</th><th>Тоглоом</th><th>Хэмжээ</th>
+            <th>Дүн</th><th>Player ID</th><th>Гүйлгээний утга</th>
+            <th>Цаг</th><th>Төлөв</th><th>Үйлдэл</th>
+          </tr></thead>
+          <tbody id="orders-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .app -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════
+const ADMIN_PASSWORD = 'TurboldAltangerelBulgantamirVoid.mn070808';
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 5 * 60 * 1000;
+
+// Bank info
+const BANK = {
+  name: 'Голомт банк',
+  iban: 'MN39001500',
+  account: '6115105008'
+};
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let loginState = { attempts: 0, lockedUntil: 0, authenticated: false };
+
+let state = {
+  game: null,
+  pkg: null,
+  orders: [],
+  adminPrices: {},
+  activeTab: 'prices',
+  pendingNewOrders: 0,
+  currentOrderId: null
+};
+
+const GAMES = [
+  {id:'pubg',  name:'PUBG Mobile',   desc:'UC цэнэглэлт — Battle Royale тоглоом', emoji:'🎯', currency:'UC',      bgClass:'pubg-bg',
+   packages:[{amount:60,price:5000},{amount:325,price:20000},{amount:660,price:40000},{amount:1800,price:100000}]},
+  {id:'ml',    name:'Mobile Legends', desc:'Diamond цэнэглэлт — MOBA тоглоом',     emoji:'⚔️', currency:'Diamond', bgClass:'ml-bg',
+   packages:[{amount:86,price:7000},{amount:172,price:14000},{amount:257,price:20000},{amount:706,price:50000}]},
+  {id:'roblox',name:'Roblox',         desc:'Robux цэнэглэлт — Metaverse тоглоом',  emoji:'🎲', currency:'Robux',   bgClass:'roblox-bg',
+   packages:[{amount:80,price:4000},{amount:400,price:20000},{amount:800,price:40000},{amount:1700,price:85000}]},
+  {id:'s2',    name:'Standoff 2',     desc:'Gold цэнэглэлт — Шутер тоглоом',       emoji:'🔫', currency:'Gold',    bgClass:'s2-bg',
+   packages:[{amount:100,price:5000},{amount:500,price:23000},{amount:1000,price:40000}]}
+];
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function fmt(a){ return '&#8366;' + Number(a).toLocaleString('mn-MN'); }
+function fmtPlain(a){ return '₮' + Number(a).toLocaleString('mn-MN'); }
+function generateId(){ return 'ORD-' + Math.random().toString(36).substr(2,8).toUpperCase(); }
+
+function showToast(msg, type=''){
+  const t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3800);
+}
+
+function copyText(text, btn){
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Хуулагдлаа';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    btn.textContent = '✓'; setTimeout(() => btn.textContent = 'Хуулах', 2000);
+  });
+}
+
+// ════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════
+function openAdminLogin(){
+  if(loginState.authenticated){ showPage('admin'); return; }
+  document.getElementById('login-modal').classList.add('show');
+  document.getElementById('login-pw').value = '';
+  document.getElementById('login-error').textContent = '';
+  document.getElementById('login-attempts').textContent = '';
+  setTimeout(() => document.getElementById('login-pw').focus(), 200);
+}
+function closeLogin(){
+  document.getElementById('login-modal').classList.remove('show');
+}
+function doLogin(){
+  const now = Date.now();
+  if(loginState.lockedUntil > now){
+    const rem = Math.ceil((loginState.lockedUntil - now)/1000);
+    document.getElementById('login-error').textContent = `Түр хориглогдлоо. ${rem}с хүлээнэ үү.`;
+    return;
+  }
+  const pw = document.getElementById('login-pw').value;
+  if(pw === ADMIN_PASSWORD){
+    loginState.authenticated = true; loginState.attempts = 0;
+    document.getElementById('login-modal').classList.remove('show');
+    document.getElementById('logout-btn').style.display = 'block';
+    document.getElementById('admin-nav-btn').querySelector('.notif-dot').style.display = 'flex';
+    showPage('admin');
+    showToast('✅ Admin панелд нэвтэрлээ!', 'success-toast');
+  } else {
+    loginState.attempts++;
+    if(loginState.attempts >= MAX_ATTEMPTS){
+      loginState.lockedUntil = Date.now() + LOCKOUT_MS; loginState.attempts = 0;
+      document.getElementById('login-error').textContent = 'Хэт олон оролдлого. 5 минут хүлээнэ үү.';
+    } else {
+      document.getElementById('login-error').textContent = '❌ Нууц үг буруу!';
+      document.getElementById('login-attempts').textContent = `Үлдсэн оролдлого: ${MAX_ATTEMPTS - loginState.attempts}`;
+    }
+    document.getElementById('login-pw').value = '';
+    document.getElementById('login-pw').focus();
+  }
+}
+function doLogout(){
+  loginState.authenticated = false;
+  document.getElementById('logout-btn').style.display = 'none';
+  showPage('home');
+  showToast('🚪 Амжилттай гарлаа');
+}
+
+// ════════════════════════════════════════
+// PAGES
+// ════════════════════════════════════════
+function showPage(p){
+  if(p === 'admin' && !loginState.authenticated){ openAdminLogin(); return; }
+  ['home','detail','pending','admin'].forEach(x => {
+    document.getElementById('page-' + x).style.display = x === p ? 'block' : 'none';
+  });
+  window.scrollTo(0, 0);
+  if(p === 'admin') renderAdmin();
+}
+
+function switchTab(tab){
+  state.activeTab = tab;
+  document.getElementById('tab-prices').style.display = tab === 'prices' ? 'block' : 'none';
+  document.getElementById('tab-middleman').style.display = tab === 'middleman' ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', (i===0&&tab==='prices')||(i===1&&tab==='middleman'));
+  });
+}
+
+// ════════════════════════════════════════
+// GAMES
+// ════════════════════════════════════════
+function renderGames(){
+  document.getElementById('games-grid').innerHTML = GAMES.map(g => `
+    <div class="game-card" onclick="openGame('${g.id}')">
+      <div class="game-card-img ${g.bgClass}">${g.emoji}</div>
+      <div class="game-card-tag">${g.currency}</div>
+      <div class="game-card-info">
+        <h3>${g.name}</h3><p>${g.desc}</p>
+        <button class="buy-btn-small" onclick="openGame('${g.id}');event.stopPropagation()">Цэнэглэх →</button>
+      </div>
+    </div>`).join('');
+}
+
+function openGame(id){
+  state.game = GAMES.find(g => g.id === id);
+  state.pkg = null;
+  document.getElementById('player-id').value = '';
+  document.getElementById('id-status').textContent = '⬆ Таны тоглоомын Player ID оруулна уу';
+  document.getElementById('id-status').className = 'id-status hint';
+  document.getElementById('checkout-btn').disabled = true;
+  document.getElementById('price-summary').style.display = 'none';
+  renderDetail();
+  showPage('detail');
+}
+
+function getPackages(g){ return state.adminPrices[g.id] || g.packages; }
+
+function renderDetail(){
+  const g = state.game;
+  document.getElementById('detail-icon').textContent = g.emoji;
+  document.getElementById('detail-icon').className = 'detail-icon ' + g.bgClass;
+  document.getElementById('detail-title').textContent = g.name;
+  document.getElementById('detail-desc').textContent = g.desc;
+  document.getElementById('detail-currency').textContent = g.currency + ' цэнэглэлт';
+  document.getElementById('packages-grid').innerHTML = getPackages(g).map((p,i) => `
+    <div class="package-card" onclick="selectPkg(${i})" id="pkg-${i}">
+      <div class="package-amount">${p.amount}</div>
+      <div class="package-unit">${g.currency}</div>
+      <div class="package-price">${fmt(p.price)}</div>
+    </div>`).join('');
+}
+
+function selectPkg(i){
+  document.querySelectorAll('.package-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('pkg-' + i).classList.add('selected');
+  state.pkg = getPackages(state.game)[i];
+  document.getElementById('price-summary').style.display = 'flex';
+  document.getElementById('price-total').innerHTML = fmt(state.pkg.price);
+  document.getElementById('summary-detail').textContent = state.pkg.amount + ' ' + state.game.currency;
+  checkReady();
+}
+
+// ════════════════════════════════════════
+// PLAYER ID VALIDATION
+// ════════════════════════════════════════
+function onPlayerIdInput(){
+  const val = document.getElementById('player-id').value.trim();
+  const statusEl = document.getElementById('id-status');
+  if(!val){
+    statusEl.className = 'id-status hint';
+    statusEl.textContent = '⬆ Таны тоглоомын Player ID оруулна уу';
+  } else if(val.length < 4){
+    statusEl.className = 'id-status invalid';
+    statusEl.textContent = '❌ ID хэт богино байна (4+ тэмдэгт)';
+  } else {
+    statusEl.className = 'id-status valid';
+    statusEl.textContent = `✅ Player ID: ${val}`;
+  }
+  checkReady();
+}
+
+function checkReady(){
+  const pid = document.getElementById('player-id').value.trim();
+  document.getElementById('checkout-btn').disabled = !(pid && pid.length >= 4 && state.pkg);
+}
+
+// ════════════════════════════════════════
+// CONFIRM ID MODAL
+// ════════════════════════════════════════
+function openConfirmModal(){
+  const pid = document.getElementById('player-id').value.trim();
+  document.getElementById('confirm-show-id').textContent = pid;
+  document.getElementById('confirm-show-game').textContent = state.game.name + ' — ' + state.pkg.amount + ' ' + state.game.currency;
+  document.getElementById('confirm-modal').classList.add('show');
+}
+function closeConfirmModal(){
+  document.getElementById('confirm-modal').classList.remove('show');
+}
+
+// ════════════════════════════════════════
+// PAYMENT MODAL
+// ════════════════════════════════════════
+function proceedToPayment(){
+  document.getElementById('confirm-modal').classList.remove('show');
+  const orderId = generateId();
+  state.currentOrderId = orderId;
+  // Гүйлгээний утга: vo1d.mn + player ID
+  const pid = document.getElementById('player-id').value.trim();
+  const ref = `vo1d.mn ${pid}`;
+
+  document.getElementById('pay-modal-amount').innerHTML = fmt(state.pkg.price);
+  document.getElementById('pay-modal-detail').textContent = state.pkg.amount + ' ' + state.game.currency + ' — ' + state.game.name;
+  document.getElementById('pay-modal-ref').textContent = ref;
+  document.getElementById('step-amount-inline').textContent = fmtPlain(state.pkg.price);
+  document.getElementById('step-ref-inline').textContent = ref;
+  document.getElementById('payment-modal').classList.add('show');
+}
+function closePaymentModal(){
+  document.getElementById('payment-modal').classList.remove('show');
+}
+
+// ════════════════════════════════════════
+// SUBMIT ORDER → PENDING
+// ════════════════════════════════════════
+function submitOrder(){
+  const pid = document.getElementById('player-id').value.trim();
+  const ref = `vo1d.mn ${pid}`;
+  const order = {
+    id: state.currentOrderId,
+    game: state.game.name,
+    gameId: state.game.id,
+    amount: state.pkg.amount,
+    currency: state.game.currency,
+    price: state.pkg.price,
+    playerId: pid,
+    ref: ref,
+    time: new Date().toLocaleString('mn-MN'),
+    status: 'pending',   // pending | confirmed
+    isNew: true
+  };
+  state.orders.push(order);
+  state.pendingNewOrders++;
+
+  // Show notif dot
+  updateNotifDot();
+
+  // Close modal
+  document.getElementById('payment-modal').classList.remove('show');
+
+  // Show pending page
+  document.getElementById('pending-details').innerHTML = `
+    <div class="pending-row"><span class="label">Захиалга</span><span class="value order-id" style="color:var(--neon);font-family:monospace">${order.id}</span></div>
+    <div class="pending-row"><span class="label">Тоглоом</span><span class="value">${order.game}</span></div>
+    <div class="pending-row"><span class="label">Цэнэглэлт</span><span class="value" style="color:var(--neon)">${order.amount} ${order.currency}</span></div>
+    <div class="pending-row"><span class="label">Player ID</span><span class="value">${order.playerId}</span></div>
+    <div class="pending-row"><span class="label">Дүн</span><span class="value" style="color:var(--neon3)">${fmtPlain(order.price)}</span></div>
+    <div class="pending-row"><span class="label">Гүйлгээний утга</span><span class="value" style="color:var(--neon3);font-family:monospace">${order.ref}</span></div>
+    <div class="pending-row"><span class="label">Данс</span><span class="value">Голомт: 6115105008</span></div>
+  `;
+  showPage('pending');
+  showToast('📨 Захиалга амжилттай илгээгдлээ! Admin баталгаажуулна.', 'warning-toast');
+}
+
+// ════════════════════════════════════════
+// NOTIF DOT
+// ════════════════════════════════════════
+function updateNotifDot(){
+  const dot = document.getElementById('notif-dot');
+  const pending = state.orders.filter(o => o.status === 'pending').length;
+  if(pending > 0){
+    dot.style.display = 'flex';
+    dot.textContent = pending > 9 ? '9+' : pending;
+  } else {
+    dot.style.display = 'none';
+  }
+}
+
+// ════════════════════════════════════════
+// ADMIN PANEL
+// ════════════════════════════════════════
+function renderAdmin(){
+  const total = state.orders.length;
+  const pending = state.orders.filter(o => o.status === 'pending').length;
+  const confirmed = state.orders.filter(o => o.status === 'confirmed').length;
+  const rev = state.orders.filter(o => o.status === 'confirmed').reduce((s,o) => s + Number(o.price), 0);
+
+  document.getElementById('admin-total-orders').textContent = total;
+  document.getElementById('admin-pending-count').textContent = pending;
+  document.getElementById('admin-confirmed-count').textContent = confirmed;
+  document.getElementById('admin-revenue').innerHTML = fmt(rev);
+
+  // New order banner — show if any new pending
+  const newOrders = state.orders.filter(o => o.status === 'pending' && o.isNew);
+  const banner = document.getElementById('new-order-banner');
+  if(newOrders.length > 0){
+    banner.classList.add('show');
+    const last = newOrders[newOrders.length - 1];
+    document.getElementById('banner-detail').textContent =
+      `${last.game} — ${last.amount} ${last.currency} | Player ID: ${last.playerId} | ${fmtPlain(last.price)}`;
+  } else {
+    banner.classList.remove('show');
+  }
+
+  // Price management
+  let pmHTML = '';
+  GAMES.forEach(g => {
+    const pkgs = getPackages(g);
+    pmHTML += `<div style="margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+      <div style="font-size:15px;font-weight:600;color:var(--neon);margin-bottom:12px">${g.emoji} ${g.name}</div>
+      ${pkgs.map((p,i) => `<div class="price-row">
+        <label>${p.amount} ${g.currency}</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:13px;color:var(--muted)">₮</span>
+          <input class="price-input" type="number" step="500" min="500" value="${Number(p.price)}"
+            onchange="updateAdminPrice('${g.id}',${i},this.value)"/>
+        </div></div>`).join('')}
+    </div>`;
+  });
+  document.getElementById('price-management').innerHTML = pmHTML;
+
+  // Orders table
+  const tbody = document.getElementById('orders-tbody');
+  if(state.orders.length === 0){
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:40px">Захиалга байхгүй байна</td></tr>';
+    return;
+  }
+  tbody.innerHTML = [...state.orders].reverse().map(o => `
+    <tr class="${o.isNew && o.status==='pending' ? 'new-row' : ''}">
+      <td><span style="color:var(--neon);font-family:monospace;font-size:12px">${o.id}</span></td>
+      <td>${o.game}</td>
+      <td style="color:var(--neon)">${o.amount} ${o.currency}</td>
+      <td style="color:var(--neon3);font-weight:700">${fmtPlain(o.price)}</td>
+      <td style="font-family:monospace;color:var(--text)">${o.playerId}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--muted)">${o.ref}</td>
+      <td style="color:var(--muted);font-size:12px">${o.time}</td>
+      <td>
+        ${o.status === 'pending'
+          ? '<span class="status-badge status-pending">⏳ Хүлээгдэж буй</span>'
+          : '<span class="status-badge status-confirmed">✅ Баталгаажсан</span>'}
+      </td>
+      <td>
+        ${o.status === 'pending'
+          ? `<button class="confirm-order-btn" onclick="confirmOrder('${o.id}')">✅ Төлбөр баталгаажлаа</button>`
+          : `<span style="font-size:12px;color:var(--muted)">—</span>`}
+      </td>
+    </tr>`).join('');
+}
+
+function confirmOrder(orderId){
+  const order = state.orders.find(o => o.id === orderId);
+  if(!order) return;
+  order.status = 'confirmed';
+  order.isNew = false;
+  updateNotifDot();
+  renderAdmin();
+  showToast(`✅ ${order.id} баталгаажлаа! Item удахгүй орно гэж хэлээрэй.`, 'success-toast');
+}
+
+function dismissBanner(){
+  state.orders.filter(o => o.isNew && o.status === 'pending').forEach(o => o.isNew = false);
+  document.getElementById('new-order-banner').classList.remove('show');
+  updateNotifDot();
+}
+
+function updateAdminPrice(gid, idx, val){
+  if(!state.adminPrices[gid]){
+    const g = GAMES.find(g => g.id === gid);
+    state.adminPrices[gid] = g.packages.map(p => ({...p}));
+  }
+  state.adminPrices[gid][idx].price = parseFloat(val) || 0;
+}
+
+function savePrices(){ showToast('✅ Үнийн мэдээлэл хадгаллаа!', 'success-toast'); }
+
+// ════════════════════════════════════════
+// MODAL CLOSE ON BACKDROP
+// ════════════════════════════════════════
+document.getElementById('login-modal').addEventListener('click', function(e){
+  if(e.target === this) closeLogin();
+});
+document.getElementById('confirm-modal').addEventListener('click', function(e){
+  if(e.target === this) closeConfirmModal();
+});
+document.getElementById('payment-modal').addEventListener('click', function(e){
+  if(e.target === this) closePaymentModal();
+});
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+renderGames();
+</script>
+</body>
+</html>
